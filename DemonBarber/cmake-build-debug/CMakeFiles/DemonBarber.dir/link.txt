@@ -1,0 +1,1 @@
+/usr/bin/c++  -pthread -lncurses -g   CMakeFiles/DemonBarber.dir/main.cpp.o CMakeFiles/DemonBarber.dir/Interface.cpp.o CMakeFiles/DemonBarber.dir/FleetStreet.cpp.o  -o DemonBarber 
