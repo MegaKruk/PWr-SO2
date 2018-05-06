@@ -1,6 +1,9 @@
-all: barber
+SOURCES = FleetStreet.cpp main.cpp
 
-barber:
-	g++ barber.cpp -o barber -pthread -lncurses -std=c++17
+all: main
 
-clean: rm -rf barber
+main:
+	g++ $(SOURCES) -o DemonBarber -pthread -lncurses -std=c++17
+
+clean: 
+	rm -rf DemonBarber
