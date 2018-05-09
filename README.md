@@ -1,2 +1,2 @@
 # SO2-Proj
-SO2
+My University Project concerning multithreading
