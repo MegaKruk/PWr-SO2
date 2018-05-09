@@ -95,7 +95,7 @@ void FleetStreet::workStarted()
 			clientsIDs.erase(clientsIDs.begin() + myPos);
 			move(9, 0);
 			clrtoeol();
-			printw("Sweeney Todd has killed client[%d]", myName);
+			printw("Sweeney Todd has killed Client[%d]", myName);
 			refresh();
 			myMutex.unlock();
 			barberChair.unlock();
@@ -108,6 +108,12 @@ void FleetStreet::workStarted()
 
 void FleetStreet::butFirstSirIThinkAShave(int clientID)
 {
+	myMutex.lock();
+	move(2, 0);
+	clrtoeol();
+	printw("Client[%d] decided to have a shave", clientID);
+	refresh();
+	myMutex.unlock();
 	int wrPointer = waitingRoomCapacity - 1;
 	while(!stop)
 	{
