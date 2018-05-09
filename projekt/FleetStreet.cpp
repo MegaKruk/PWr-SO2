@@ -8,17 +8,20 @@ std::thread barber;
 std::thread GUI;
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
 std::mutex barberChair;		 				// barber's chair as mutex
-std::mutex myMutex; 						// mutex for keeping cout safe
+std::mutex chute;							// chute as mutex
+std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
 int myName;
 int myPos;
+int meat;
 //std::thread::id myPID;
-
+// 0 title, 1 client creator, 2 event log, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 lounge, 13 title, 14 chute, 15-18 restaurant 
 
 FleetStreet::FleetStreet()
 {
 	stop = false;
 	amIDead = false;
 	uniqueID = 0;
+	meat = 0;
 	waitingRoomStatus.resize(waitingRoomCapacity);
 	for(int i = 0; i < waitingRoomCapacity; i++)
 	{
@@ -59,9 +62,9 @@ void FleetStreet::workStarted()
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 					progressT1 = (100 * i) / randWait1;
 					myMutex.lock();
-					move(4, 0);
+					move(5, 0);
 					clrtoeol();
-					printw("Sweeney Todd is sleeping in his chair\t\t%.0f\t%%", progressT1);
+					printw("Sweeney Todd is sleeping in his chair\t\t\t%.0f\t%%", progressT1);
 					refresh();
 					myMutex.unlock();
 				}
@@ -80,12 +83,11 @@ void FleetStreet::workStarted()
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				progressT3 = (100 * j) / randWait3;
 				myMutex.lock();
-				move(4, 0);
+				move(5, 0);
 				clrtoeol();
-				printw("Sweeney Todd is shaving Client[%d]\t\t%.0f\t%%", myName, progressT3);
+				printw("Sweeney Todd is shaving Client[%d]\t\t\t%.0f\t%%", myName, progressT3);
 				refresh();
 				myMutex.unlock();
-
 			}
 			//kill
 			myMutex.lock();
@@ -93,15 +95,29 @@ void FleetStreet::workStarted()
 			clients[myPos].join();
 			clients.erase(clients.begin() + myPos);
 			clientsIDs.erase(clientsIDs.begin() + myPos);
-			move(9, 0);
+			move(2, 0);
 			clrtoeol();
-			printw("Sweeney Todd has killed Client[%d]", myName);
+			printw("Events: Sweeney Todd has killed Client[%d]", myName);
 			refresh();
 			myMutex.unlock();
+
+			int randWait4 = (std::rand() % 1) + 10;
+			float progressT4 = 0.0;
+			chute.lock();
+			for (int j = 1; j <= randWait4; j++)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				progressT4 = (100 * j) / randWait4;
+				myMutex.lock();
+				meat++;
+				move(5, 0);
+				clrtoeol();
+				printw("Sweeney Todd is sending Client[%d] down the chute\t%.0f\t%%", myName, progressT4);
+				refresh();
+				myMutex.unlock();
+			}
+			chute.unlock();
 			barberChair.unlock();
-			/*******************delete later****************/
-			//std::this_thread::sleep_for(std::chrono::milliseconds(234));
-			//wrPointer = waitingRoomCapacity - 1;
 		}
 	}
 }
@@ -111,7 +127,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 	myMutex.lock();
 	move(2, 0);
 	clrtoeol();
-	printw("Client[%d] decided to have a shave", clientID);
+	printw("Events: Client[%d] decided to have a shave", clientID);
 	refresh();
 	myMutex.unlock();
 	int wrPointer = waitingRoomCapacity - 1;
@@ -130,7 +146,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 			continue; // replace with leave
 		}
 	}
-	while(!stop) // replace with not dead
+	while(!stop)
 	{
 		if(wrPointer == 0)
 		{
@@ -149,30 +165,6 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 				}
 				amIDead = false;
 				break;
-				//std::this_thread::sleep_for(std::chrono::milliseconds(4444));
-				//wrPointer = waitingRoomCapacity - 1;
-				/*myMutex.lock();
-				waitingRoomStatus[0] = -1;
-				myMutex.unlock();
-				waitingRoom[0].unlock();
-				int randWait3 = (std::rand() % 1) + 20;
-				float progressT3 = 0.0;
-				for (int j = 1; j <= randWait3; j++)
-				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					progressT3 = (100 * j) / randWait3;
-					myMutex.lock();
-					move(4, 0);
-					clrtoeol();
-					printw("Sweeney Todd is shaving Client[%d]\t\t%.0f\t%%", clientID, progressT3);
-					refresh();
-					myMutex.unlock();
-				}
-				barberChair.unlock();
-				/*******************delete later****************/
-				//std::this_thread::sleep_for(std::chrono::milliseconds(234));
-				//wrPointer = waitingRoomCapacity - 1;
-				//die here
 			}
 			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
@@ -216,7 +208,7 @@ void FleetStreet::createClients()
 				myMutex.lock();
 				move(1, 0);
 				clrtoeol();
-				printw("Next Client is coming to Fleet Street\t\t%.0f\t%%", progressT0);
+				printw("Next Client is coming to Fleet Street\t\t\t%.0f\t%%", progressT0);
 				refresh();
 				myMutex.unlock();
 			}
@@ -225,13 +217,13 @@ void FleetStreet::createClients()
 			clientsIDs.push_back(uniqueID);		  
 			move(1, 0);
 			clrtoeol();
-			printw("Next Client is coming to Fleet Street\t\t%.0f\t%%", 0);
+			printw("Next Client is coming to Fleet Street\t\t\t%.0f\t%%", 0);
 			refresh();
 			myMutex.unlock();
 			uniqueID++;
 		}
 		else
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 }
 
@@ -242,14 +234,18 @@ void FleetStreet::changeGUI()
 		myMutex.lock();
 		for (int i = 0; i < waitingRoomCapacity; i++)
 		{
-			move(i+5, 0);
+			move(i+9, 0);
 			clrtoeol();
 			if(waitingRoomStatus[i] == -1)
-				printw("Lounge[%d]:\tempty", i);
+				printw("Lounge[%d]:\t\t\tempty", i);
 			else
-				printw("Lounge[%d]:\tClient[%d]", i, waitingRoomStatus[i]);
-			refresh();
+				printw("Lounge[%d]:\t\t\tClient[%d]", i, waitingRoomStatus[i]);
+			//refresh();
 		}
+		move(14, 0);
+		clrtoeol();
+		printw("Edible meat in the chute:\t%d\tkg", meat);
+		refresh();
 		myMutex.unlock();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	}
@@ -257,7 +253,7 @@ void FleetStreet::changeGUI()
 
 void FleetStreet::startSimulation()
 {
-	initscr();
+	initscr();	// try putting in constructor
 	cbreak();
 	//raw();
 	//menuinit();
@@ -279,7 +275,7 @@ void FleetStreet::startSimulation()
 		clients[i].join();
 		// pop
 	}
-	endwin();
+	endwin();	// try putting in destructor
 }
 
 FleetStreet::~FleetStreet() {  }
