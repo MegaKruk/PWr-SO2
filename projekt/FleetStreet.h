@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <vector>
 #include <ncurses.h>
+#include <algorithm>
 
 constexpr int maxNoOfClients = 3;
 constexpr int waitingRoomCapacity = 3;
@@ -16,6 +17,7 @@ private:
 
 public:
     bool stop;
+    bool amIDead;
     int uniqueID;
 
     FleetStreet();

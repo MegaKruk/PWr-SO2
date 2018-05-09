@@ -9,10 +9,15 @@ std::thread GUI;
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
 std::mutex barberChair;		 				// barber's chair as mutex
 std::mutex myMutex; 						// mutex for keeping cout safe
+int myName;
+int myPos;
+//std::thread::id myPID;
+
 
 FleetStreet::FleetStreet()
 {
 	stop = false;
+	amIDead = false;
 	uniqueID = 0;
 	waitingRoomStatus.resize(waitingRoomCapacity);
 	for(int i = 0; i < waitingRoomCapacity; i++)
@@ -64,6 +69,40 @@ void FleetStreet::workStarted()
 			}
 			else isEmpty = false;
 		}
+		if(barberChair.try_lock()) { barberChair.unlock(); }
+		else
+		{
+			
+			int randWait3 = (std::rand() % 1) + 20;
+			float progressT3 = 0.0;
+			for (int j = 1; j <= randWait3; j++)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				progressT3 = (100 * j) / randWait3;
+				myMutex.lock();
+				move(4, 0);
+				clrtoeol();
+				printw("Sweeney Todd is shaving Client[%d]\t\t%.0f\t%%", myName, progressT3);
+				refresh();
+				myMutex.unlock();
+
+			}
+			//kill
+			myMutex.lock();
+			amIDead = true;
+			clients[myPos].join();
+			clients.erase(clients.begin() + myPos);
+			clientsIDs.erase(clientsIDs.begin() + myPos);
+			move(9, 0);
+			clrtoeol();
+			printw("Sweeney Todd has killed client[%d]", myName);
+			refresh();
+			myMutex.unlock();
+			barberChair.unlock();
+			/*******************delete later****************/
+			//std::this_thread::sleep_for(std::chrono::milliseconds(234));
+			//wrPointer = waitingRoomCapacity - 1;
+		}
 	}
 }
 
@@ -93,6 +132,21 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 			{
 				myMutex.lock();
 				waitingRoomStatus[0] = -1;
+				myName = clientID;
+				myPos = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
+				//myPID = clients[myPos].get_id();
+				myMutex.unlock();
+				waitingRoom[0].unlock();
+				while(!amIDead)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				}
+				amIDead = false;
+				break;
+				//std::this_thread::sleep_for(std::chrono::milliseconds(4444));
+				//wrPointer = waitingRoomCapacity - 1;
+				/*myMutex.lock();
+				waitingRoomStatus[0] = -1;
 				myMutex.unlock();
 				waitingRoom[0].unlock();
 				int randWait3 = (std::rand() % 1) + 20;
@@ -110,8 +164,8 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 				}
 				barberChair.unlock();
 				/*******************delete later****************/
-				std::this_thread::sleep_for(std::chrono::milliseconds(234));
-				wrPointer = waitingRoomCapacity - 1;
+				//std::this_thread::sleep_for(std::chrono::milliseconds(234));
+				//wrPointer = waitingRoomCapacity - 1;
 				//die here
 			}
 			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
