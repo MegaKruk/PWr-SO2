@@ -1,7 +1,7 @@
 #include "FleetStreet.h"
 
 std::vector<int> clientsIDs;
-std::vector<int> waitingRoomStatus;
+std::vector<int> barberShopStatus;
 std::vector<std::thread> clients;
 std::thread clientCreator;
 std::thread barber;
@@ -14,7 +14,7 @@ int myName;
 int myPos;
 int meat;
 //std::thread::id myPID;
-// 0 title, 1 client creator, 2 event log, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 lounge, 13 title, 14 chute, 15-18 restaurant 
+// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9 chair, 10-12 lounge, 14 title, 15 chute, 16-19 restaurant 
 
 FleetStreet::FleetStreet()
 {
@@ -22,10 +22,10 @@ FleetStreet::FleetStreet()
 	amIDead = false;
 	uniqueID = 0;
 	meat = 0;
-	waitingRoomStatus.resize(waitingRoomCapacity);
-	for(int i = 0; i < waitingRoomCapacity; i++)
+	barberShopStatus.resize(waitingRoomCapacity + 1);
+	for(int i = 0; i < barberShopStatus.size(); i++)
 	{
-		waitingRoomStatus[i] = -1;
+		barberShopStatus[i] = -1;
 	}
 }
 
@@ -55,6 +55,9 @@ void FleetStreet::workStarted()
 			// if so, then barber is trying to sleep
 			if (barberChair.try_lock())
 			{
+				myMutex.lock();
+				barberShopStatus[0] = -2;
+				myMutex.unlock();
 				int randWait1 = (std::rand() % 1) + 30;
 				float progressT1 = 0.0;
 				for (int i = 1; i <= randWait1; i++)
@@ -116,6 +119,9 @@ void FleetStreet::workStarted()
 				refresh();
 				myMutex.unlock();
 			}
+			myMutex.lock();
+			barberShopStatus[0] = -1;
+			myMutex.unlock();
 			chute.unlock();
 			barberChair.unlock();
 		}
@@ -136,7 +142,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 		if(waitingRoom[wrPointer].try_lock())
 		{
 			myMutex.lock();
-			waitingRoomStatus[wrPointer] = clientID;
+			barberShopStatus[wrPointer + 1] = clientID;
 			myMutex.unlock();
 			break;
 		}
@@ -153,10 +159,10 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 			if(barberChair.try_lock())
 			{
 				myMutex.lock();
-				waitingRoomStatus[0] = -1;
+				barberShopStatus[1] = -1;
+				barberShopStatus[0] = clientID;
 				myName = clientID;
 				myPos = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
-				//myPID = clients[myPos].get_id();
 				myMutex.unlock();
 				waitingRoom[0].unlock();
 				while(!amIDead)
@@ -173,8 +179,8 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 			if(waitingRoom[wrPointer-1].try_lock())
 			{
 				myMutex.lock();
-				waitingRoomStatus[wrPointer] = -1;
-				waitingRoomStatus[wrPointer-1] = clientID;
+				barberShopStatus[wrPointer + 1] = -1;
+				barberShopStatus[wrPointer] = clientID;
 				myMutex.unlock();
 				waitingRoom[wrPointer].unlock();
 				wrPointer--;
@@ -232,17 +238,26 @@ void FleetStreet::changeGUI()
 	while(!stop)
 	{
 		myMutex.lock();
-		for (int i = 0; i < waitingRoomCapacity; i++)
+		move(9, 0);
+		clrtoeol();
+		if(barberShopStatus[0] == -1)
+			printw("Barber's chair:\t\t\tempty");
+		else if(barberShopStatus[0] == -2)
+			printw("Barber's chair:\t\t\tSweeney Todd");
+		else
+			printw("Barber's chair:\t\t\tClient[%d]", barberShopStatus[0]);
+
+		for (int i = 1; i < barberShopStatus.size(); i++)
 		{
 			move(i+9, 0);
 			clrtoeol();
-			if(waitingRoomStatus[i] == -1)
-				printw("Lounge[%d]:\t\t\tempty", i);
+			if(barberShopStatus[i] == -1)
+				printw("Lounge[%d]:\t\t\tempty", i - 1);
 			else
-				printw("Lounge[%d]:\t\t\tClient[%d]", i, waitingRoomStatus[i]);
+				printw("Lounge[%d]:\t\t\tClient[%d]", i - 1, barberShopStatus[i]);
 			//refresh();
 		}
-		move(14, 0);
+		move(15, 0);
 		clrtoeol();
 		printw("Edible meat in the chute:\t%d\tkg", meat);
 		refresh();
