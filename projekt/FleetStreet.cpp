@@ -1,20 +1,26 @@
 #include "FleetStreet.h"
 
 std::vector<int> clientsIDs;
-std::vector<int> barberShopStatus;
+std::vector<int> priorityList;
+std::vector<int> barberShopStatus;			// 0-barber's chair, 1-3 lounge
+std::vector<int> restaurantStatus;			// 0-3 restaurant chairs
 std::vector<std::thread> clients;
 std::thread clientCreator;
-std::thread barber;
-std::thread GUI;
+std::thread barber;							// Sweeney Todd thread
+std::thread baker;							// Mrs Lovett thread
+std::thread GUI;							// Thread to refresh barber and restaurant status
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
 std::mutex barberChair;		 				// barber's chair as mutex
+std::mutex restaurantChair;					// restaurant chair as mutex
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
 int myName;
 int myPos;
 int meat;
-//std::thread::id myPID;
-// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9 chair, 10-12 lounge, 14 title, 15 chute, 16-19 restaurant 
+int meatPies;
+// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9 chair, 10-12 lounge, 
+// 14 title, 15 chute, 16 total meatPies, 17-20 restaurant 
+
 
 FleetStreet::FleetStreet()
 {
@@ -22,10 +28,16 @@ FleetStreet::FleetStreet()
 	amIDead = false;
 	uniqueID = 0;
 	meat = 0;
+	meatPies = 0;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
 	for(int i = 0; i < barberShopStatus.size(); i++)
 	{
 		barberShopStatus[i] = -1;
+	}
+	priorityList.resize(4);
+	for(int i = 0; i < priorityList.size(); i++)
+	{
+		priorityList[i] = i;
 	}
 }
 
@@ -36,7 +48,7 @@ void FleetStreet::safePrint(std::string str)	// useful for debugging
 	myMutex.unlock();
 }
 
-void FleetStreet::workStarted()
+void FleetStreet::barberFunction()
 {
 	while (!stop)
 	{
@@ -124,6 +136,78 @@ void FleetStreet::workStarted()
 			myMutex.unlock();
 			chute.unlock();
 			barberChair.unlock();
+		}
+	}
+}
+
+void FleetStreet::bakerFunction()
+{
+	while(!stop)
+	{
+		if(priorityList[0] == 0)
+		{
+		    // make meatPies
+			myMutex.lock();
+			if(meat < 15)
+			{
+				myMutex.unlock();
+				int tmp = priorityList[0];
+				priorityList.erase(priorityList.begin());
+				priorityList.push_back(tmp);
+				continue;
+			}
+			myMutex.unlock();
+			if (chute.try_lock())
+			{
+				int randWait5 = (std::rand() % 1) + 15;
+				float progressT5 = 0.0;
+				for (int i = 1; i <= randWait5; i++)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					progressT5 = (100 * i) / randWait5;
+					myMutex.lock();
+					meat--;
+					move(6, 0);
+					clrtoeol();
+					printw("Mrs Lovett is baking a meat pie\t\t\t\t%.0f\t%%", progressT5);
+					refresh();
+					myMutex.unlock();
+				}
+				chute.unlock();
+				myMutex.lock();
+				meatPies++;
+				myMutex.unlock();
+				int tmp1 = priorityList[0];
+				priorityList.erase(priorityList.begin());
+				priorityList.push_back(tmp1);
+			}
+			int tmp2 = priorityList[0];
+			priorityList.erase(priorityList.begin());
+			priorityList.push_back(tmp2);
+		}
+		else if(priorityList[0] == 1)
+		{
+		    // clean razors
+
+			int tmp3 = priorityList[0];
+			priorityList.erase(priorityList.begin());
+			priorityList.push_back(tmp3);
+		}
+		else if(priorityList[0] == 1)
+		{
+		    // serve meatPies
+
+			int tmp4 = priorityList[0];
+			priorityList.erase(priorityList.begin());
+			priorityList.push_back(tmp4);
+		}
+		else
+		{
+			// sleep
+
+			int tmp0 = priorityList[0];
+			priorityList.erase(priorityList.begin());
+			priorityList.push_back(tmp0);
 		}
 	}
 }
@@ -255,11 +339,13 @@ void FleetStreet::changeGUI()
 				printw("Lounge[%d]:\t\t\tempty", i - 1);
 			else
 				printw("Lounge[%d]:\t\t\tClient[%d]", i - 1, barberShopStatus[i]);
-			//refresh();
 		}
 		move(15, 0);
 		clrtoeol();
-		printw("Edible meat in the chute:\t%d\tkg", meat);
+		printw("Edible meat in the chute:\t%d\tdag", meat);
+		move(16, 0);
+		clrtoeol();
+		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
 		refresh();
 		myMutex.unlock();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -274,21 +360,22 @@ void FleetStreet::startSimulation()
 	//menuinit();
 
 	// creating threads
-	barber = std::thread(&FleetStreet::workStarted, this);
+	barber = std::thread(&FleetStreet::barberFunction, this);
+	baker = std::thread(&FleetStreet::bakerFunction, this);
 	clientCreator = std::thread(&FleetStreet::createClients, this);
 	GUI = std::thread(&FleetStreet::changeGUI, this);
 
-	std::cin.get(); 	// pause main thread here, other threads still going
+	std::cin.get(); 	// pauses main thread here, other threads still going
 	stop = true;		// this breaks main loop
 
 	// joining threads
-	clientCreator.join();
 	barber.join();
+	baker.join();
+	clientCreator.join();
 	GUI.join();
 	for (int i = 0; i < clients.size(); ++i)
 	{
 		clients[i].join();
-		// pop
 	}
 	endwin();	// try putting in destructor
 }

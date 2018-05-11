@@ -22,7 +22,8 @@ public:
 
     FleetStreet();
     void safePrint(std::string);
-    void workStarted();
+    void barberFunction();
+    void bakerFunction();
     void butFirstSirIThinkAShave(int);
     void arrive(int);
     void startSimulation();
