@@ -1,9 +1,5 @@
 #include "FleetStreet.h"
 
-std::vector<int> clientsIDs;
-std::vector<int> priorityList;
-std::vector<int> barberShopStatus;			// 0-barber's chair, 1-3 lounge
-std::vector<int> bakeryStatus;				// 0 serving pies, 1-3 bakery queue
 std::vector<std::thread> clients;
 std::thread clientCreator;
 std::thread barber;							// Sweeney Todd thread
@@ -14,7 +10,6 @@ std::mutex barberChair;		 				// barber's chair as mutex
 std::mutex bakery[bakeryCapacity];			// to bakery as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
-int myName, myPos, meat, meatPies;
 // 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
 // 17 title, 18 meat in the chute, 19 meat pies, 20 money,  21-24 bakery 
 
