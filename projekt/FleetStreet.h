@@ -8,7 +8,7 @@
 #include <ncurses.h>
 #include <algorithm>
 
-constexpr int maxNoOfClients = 3;
+constexpr int maxNoOfClients = 4;
 constexpr int waitingRoomCapacity = 3;
 
 class FleetStreet

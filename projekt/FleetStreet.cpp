@@ -14,12 +14,9 @@ std::mutex barberChair;		 				// barber's chair as mutex
 std::mutex restaurantChair;					// restaurant chair as mutex
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
-int myName;
-int myPos;
-int meat;
-int meatPies;
-// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9 chair, 10-12 lounge, 
-// 14 title, 15 chute, 16 total meatPies, 17-20 restaurant 
+int myName, myPos, meat, meatPies;
+// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
+// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  21-24 restaurant 
 
 
 FleetStreet::FleetStreet()
@@ -70,7 +67,7 @@ void FleetStreet::barberFunction()
 				myMutex.lock();
 				barberShopStatus[0] = -2;
 				myMutex.unlock();
-				int randWait1 = (std::rand() % 1) + 30;
+				int randWait1 = (std::rand() % 1) + 15;
 				float progressT1 = 0.0;
 				for (int i = 1; i <= randWait1; i++)
 				{
@@ -193,7 +190,7 @@ void FleetStreet::bakerFunction()
 			priorityList.erase(priorityList.begin());
 			priorityList.push_back(tmp3);
 		}
-		else if(priorityList[0] == 1)
+		else if(priorityList[0] == 2)
 		{
 		    // serve meatPies
 
@@ -204,6 +201,7 @@ void FleetStreet::bakerFunction()
 		else
 		{
 			// sleep
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
 			int tmp0 = priorityList[0];
 			priorityList.erase(priorityList.begin());
@@ -289,7 +287,7 @@ void FleetStreet::createClients()
 	{
 		if(clients.size() < maxNoOfClients)
 		{
-			int randWait0 = (std::rand() % 1) + 7;
+			int randWait0 = (std::rand() % 1) + 15;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
 			{
@@ -322,7 +320,7 @@ void FleetStreet::changeGUI()
 	while(!stop)
 	{
 		myMutex.lock();
-		move(9, 0);
+		move(12, 0);
 		clrtoeol();
 		if(barberShopStatus[0] == -1)
 			printw("Barber's chair:\t\t\tempty");
@@ -333,17 +331,17 @@ void FleetStreet::changeGUI()
 
 		for (int i = 1; i < barberShopStatus.size(); i++)
 		{
-			move(i+9, 0);
+			move(i+12, 0);
 			clrtoeol();
 			if(barberShopStatus[i] == -1)
 				printw("Lounge[%d]:\t\t\tempty", i - 1);
 			else
 				printw("Lounge[%d]:\t\t\tClient[%d]", i - 1, barberShopStatus[i]);
 		}
-		move(15, 0);
+		move(18, 0);
 		clrtoeol();
 		printw("Edible meat in the chute:\t%d\tdag", meat);
-		move(16, 0);
+		move(19, 0);
 		clrtoeol();
 		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
 		refresh();
