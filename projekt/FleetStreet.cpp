@@ -3,20 +3,20 @@
 std::vector<int> clientsIDs;
 std::vector<int> priorityList;
 std::vector<int> barberShopStatus;			// 0-barber's chair, 1-3 lounge
-std::vector<int> restaurantStatus;			// 0-3 restaurant chairs
+std::vector<int> bakeryStatus;				// 0 serving pies, 1-3 bakery queue
 std::vector<std::thread> clients;
 std::thread clientCreator;
 std::thread barber;							// Sweeney Todd thread
 std::thread baker;							// Mrs Lovett thread
-std::thread GUI;							// Thread to refresh barber and restaurant status
+std::thread GUI;							// Thread to refresh barber and bakery status
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
 std::mutex barberChair;		 				// barber's chair as mutex
-std::mutex restaurantChair;					// restaurant chair as mutex
+std::mutex bakery[bakeryCapacity];			// to bakery as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
 int myName, myPos, meat, meatPies;
 // 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
-// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  21-24 restaurant 
+// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  21-24 bakery 
 
 
 FleetStreet::FleetStreet()
@@ -201,8 +201,23 @@ void FleetStreet::bakerFunction()
 		else
 		{
 			// sleep
-			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
+			if (bakery[0].try_lock())
+			{
+				int randWait6 = (std::rand() % 1) + 15;
+				float progressT6 = 0.0;
+				for (int i = 1; i <= randWait6; i++)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					progressT6 = (100 * i) / randWait6;
+					myMutex.lock();
+					move(6, 0);
+					clrtoeol();
+					printw("Mrs Lovett is sleeping in her bakery\t\t\t%.0f\t%%", progressT6);
+					refresh();
+					myMutex.unlock();
+				}
+			}
+			bakery[0].unlock();
 			int tmp0 = priorityList[0];
 			priorityList.erase(priorityList.begin());
 			priorityList.push_back(tmp0);

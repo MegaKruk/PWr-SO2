@@ -10,6 +10,7 @@
 
 constexpr int maxNoOfClients = 4;
 constexpr int waitingRoomCapacity = 3;
+constexpr int bakeryCapacity = 4;
 
 class FleetStreet
 {
