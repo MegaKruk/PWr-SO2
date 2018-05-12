@@ -18,6 +18,7 @@ FleetStreet::FleetStreet()
 {
 	stop = false;
 	amIDead = false;
+	amIFull = false;
 	uniqueID = 0;
 	meat = 0;
 	meatPies = 0;
@@ -81,8 +82,7 @@ void FleetStreet::barberFunction()
 		if(barberChair.try_lock()) { barberChair.unlock(); }
 		else
 		{
-			
-			int randWait3 = (std::rand() % 1) + 15;
+			int randWait3 = (std::rand() % 1) + 25;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
 			{
@@ -137,7 +137,7 @@ void FleetStreet::bakerFunction()
 	{
 		if(priorityList[0] == 0)
 		{
-		    // make meatPies
+			// make meatPies
 			myMutex.lock();
 			if(meat < 15)
 			{
@@ -180,7 +180,7 @@ void FleetStreet::bakerFunction()
 		else if(priorityList[0] == 1)
 		{
 			//std::this_thread::sleep_for(std::chrono::milliseconds(1500));
-		    // clean razors
+			// clean razors
 
 			int tmp3 = priorityList[0];
 			priorityList.erase(priorityList.begin());
@@ -188,19 +188,19 @@ void FleetStreet::bakerFunction()
 		}
 		else if(priorityList[0] == 2)
 		{
-		    // serve meatPies
-		    if(bakery[0].try_lock()) 
-		    {
-		    	bakery[0].unlock();
-		    	int tmp4 = priorityList[0];
+			// serve meatPies
+			if(bakery[0].try_lock()) 
+			{
+				bakery[0].unlock();
+				int tmp4 = priorityList[0];
 				priorityList.erase(priorityList.begin());
 				priorityList.push_back(tmp4);
-		    }
-		    else
-		    {
-		    	/*if(meatPies > 0)
-		    	{
-			    	int randWait7 = (std::rand() % 1) + 20;
+			}
+			else
+			{
+				if(meatPies > 0)
+				{
+					int randWait7 = (std::rand() % 1) + 20;
 					float progressT7 = 0.0;
 					for (int i = 1; i <= randWait7; i++)
 					{
@@ -215,22 +215,30 @@ void FleetStreet::bakerFunction()
 					}
 					// leave
 					myMutex.lock();
-			    	meatPies--;
-			    	money = money + 5;
 					amIFull = true;
-					clients[myPos2].join();
-					clients.erase(clients.begin() + myPos2);
-					clientsIDs.erase(clientsIDs.begin() + myPos2);
+					/*move(3, 0);
+					clrtoeol();
+					printw("Events: Client[%d]:\t%d", myName2, myPos2);
+					refresh();*/
+
+					/////////////////PROBLEM WITH JOINING/////////
+					//clients[myPos2].join();
+					//clients.erase(clients.begin() + myPos2);
+					//clientsIDs.erase(clientsIDs.begin() + myPos2);
 					move(2, 0);
 					clrtoeol();
 					printw("Events: Client[%d] ate a pie, paid and is going home", myName2);
 					refresh();
 					myMutex.unlock();
-				}*/
-		    	int tmp5 = priorityList[0];
+					myMutex.lock();
+					meatPies--;
+					money += 5;
+					myMutex.unlock();
+				}
+				int tmp5 = priorityList[0];
 				priorityList.erase(priorityList.begin());
 				priorityList.push_back(tmp5);
-		    }		
+			}		
 		}
 		else
 		{
@@ -275,8 +283,8 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 		}
 		else 
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(300));
-			continue; // replace with leave
+			std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			continue;
 		}
 	}
 	while(!stop)
@@ -335,8 +343,8 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 		}
 		else 
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(300));
-			continue; // replace with leave
+			std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			continue; 
 		}
 	}
 	while(!stop)
@@ -357,6 +365,7 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 					std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				}
 				amIFull = false;
+				bakery[0].unlock();
 				break;
 			}
 			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
@@ -389,8 +398,8 @@ void FleetStreet::createClients()
 {
 	while(!stop)
 	{
-		if(clients.size() < maxNoOfClients)
-		{
+		//if(clients.size() < maxNoOfClients)
+		//{
 			int randWait0 = (std::rand() % 1) + 15;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
@@ -413,9 +422,9 @@ void FleetStreet::createClients()
 			refresh();
 			myMutex.unlock();
 			uniqueID++;
-		}
-		else
-			std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		//}
+		//else
+		//	std::this_thread::sleep_for(std::chrono::milliseconds(500));
 	}
 }
 

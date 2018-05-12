@@ -8,7 +8,7 @@
 #include <ncurses.h>
 #include <algorithm>
 
-constexpr int maxNoOfClients = 7;
+//constexpr int maxNoOfClients = 8;
 constexpr int waitingRoomCapacity = 3;
 constexpr int bakeryCapacity = 4;
 
