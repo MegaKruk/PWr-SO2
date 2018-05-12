@@ -11,7 +11,7 @@ std::mutex bakery[bakeryCapacity];			// to bakery as mutexes, pies are served at
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
 // 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
-// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  21-24 bakery, 26 RENT
+// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  22-25 bakery, 27 RENT
 
 
 FleetStreet::FleetStreet()
@@ -21,10 +21,16 @@ FleetStreet::FleetStreet()
 	uniqueID = 0;
 	meat = 0;
 	meatPies = 0;
+	money = 0;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
 	for(int i = 0; i < barberShopStatus.size(); i++)
 	{
 		barberShopStatus[i] = -1;
+	}
+	bakeryStatus.resize(bakeryCapacity);
+	for(int i = 0; i < bakeryStatus.size(); i++)
+	{
+		bakeryStatus[i] = -1;
 	}
 	priorityList.resize(4);
 	for(int i = 0; i < priorityList.size(); i++)
@@ -76,7 +82,7 @@ void FleetStreet::barberFunction()
 		else
 		{
 			
-			int randWait3 = (std::rand() % 1) + 20;
+			int randWait3 = (std::rand() % 1) + 15;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
 			{
@@ -101,7 +107,7 @@ void FleetStreet::barberFunction()
 			refresh();
 			myMutex.unlock();
 
-			int randWait4 = (std::rand() % 1) + 10;
+			int randWait4 = (std::rand() % 1) + 15;
 			float progressT4 = 0.0;
 			chute.lock();
 			for (int j = 1; j <= randWait4; j++)
@@ -173,7 +179,7 @@ void FleetStreet::bakerFunction()
 		}
 		else if(priorityList[0] == 1)
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+			//std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 		    // clean razors
 
 			int tmp3 = priorityList[0];
@@ -183,16 +189,16 @@ void FleetStreet::bakerFunction()
 		else if(priorityList[0] == 2)
 		{
 		    // serve meatPies
-		    if(/*bakery[0].try_lock()*/ meatPies < 1) 
+		    if(bakery[0].try_lock()) 
 		    {
-		    	//bakery[0].unlock();
+		    	bakery[0].unlock();
 		    	int tmp4 = priorityList[0];
 				priorityList.erase(priorityList.begin());
 				priorityList.push_back(tmp4);
 		    }
 		    else
 		    {
-		    	if(meatPies > 0)
+		    	/*if(meatPies > 0)
 		    	{
 			    	int randWait7 = (std::rand() % 1) + 20;
 					float progressT7 = 0.0;
@@ -203,39 +209,47 @@ void FleetStreet::bakerFunction()
 						myMutex.lock();
 						move(6, 0);
 						clrtoeol();
-						printw("Mrs Lovett is serving a Client\t\t\t\t%.0f\t%%", progressT7);
+						printw("Mrs Lovett is serving a Client[%d]\t\t\t%.0f\t%%", myName2, progressT7);
 						refresh();
 						myMutex.unlock();
 					}
+					// leave
 					myMutex.lock();
 			    	meatPies--;
+			    	money = money + 5;
+					amIFull = true;
+					clients[myPos2].join();
+					clients.erase(clients.begin() + myPos2);
+					clientsIDs.erase(clientsIDs.begin() + myPos2);
+					move(2, 0);
+					clrtoeol();
+					printw("Events: Client[%d] ate a pie, paid and is going home", myName2);
+					refresh();
 					myMutex.unlock();
-				}
+				}*/
 		    	int tmp5 = priorityList[0];
 				priorityList.erase(priorityList.begin());
 				priorityList.push_back(tmp5);
-		    }			
+		    }		
 		}
 		else
 		{
 			// sleep
-			if (bakery[0].try_lock())
+			myMutex.lock();
+			myMutex.unlock();
+			int randWait6 = (std::rand() % 1) + 15;
+			float progressT6 = 0.0;
+			for (int i = 1; i <= randWait6; i++)
 			{
-				int randWait6 = (std::rand() % 1) + 15;
-				float progressT6 = 0.0;
-				for (int i = 1; i <= randWait6; i++)
-				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
-					progressT6 = (100 * i) / randWait6;
-					myMutex.lock();
-					move(6, 0);
-					clrtoeol();
-					printw("Mrs Lovett is sleeping in her bakery\t\t\t%.0f\t%%", progressT6);
-					refresh();
-					myMutex.unlock();
-				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				progressT6 = (100 * i) / randWait6;
+				myMutex.lock();
+				move(6, 0);
+				clrtoeol();
+				printw("Mrs Lovett is taking a break\t\t\t\t%.0f\t%%", progressT6);
+				refresh();
+				myMutex.unlock();
 			}
-			bakery[0].unlock();
 			int tmp0 = priorityList[0];
 			priorityList.erase(priorityList.begin());
 			priorityList.push_back(tmp0);
@@ -261,7 +275,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 		}
 		else 
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			std::this_thread::sleep_for(std::chrono::milliseconds(300));
 			continue; // replace with leave
 		}
 	}
@@ -303,13 +317,72 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 	}
 }
 
+void FleetStreet::theWorstPiesInLondon(int clientID)
+{
+	int bkrPointer = bakeryCapacity - 1;
+	while(!stop)
+	{
+		if(bakery[bkrPointer].try_lock())
+		{
+			myMutex.lock();
+			move(2, 0);
+			clrtoeol();
+			printw("Events: Client[%d] decided to eat a meat pie", clientID);
+			refresh();
+			bakeryStatus[bkrPointer] = clientID;
+			myMutex.unlock();
+			break;
+		}
+		else 
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(300));
+			continue; // replace with leave
+		}
+	}
+	while(!stop)
+	{
+		if(bkrPointer == 1)
+		{
+			if(bakery[0].try_lock())
+			{
+				myMutex.lock();
+				bakeryStatus[1] = -1;
+				bakeryStatus[0] = clientID;
+				myName2 = clientID;
+				myPos2 = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
+				myMutex.unlock();
+				bakery[1].unlock();
+				while(!amIFull)
+				{
+					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+				}
+				amIFull = false;
+				break;
+			}
+			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+		}
+		else 
+		{
+			if(bakery[bkrPointer-1].try_lock())
+			{
+				myMutex.lock();
+				bakeryStatus[bkrPointer] = -1;
+				bakeryStatus[bkrPointer - 1] = clientID;
+				myMutex.unlock();
+				bakery[bkrPointer].unlock();
+				bkrPointer--;
+			}
+			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+		}
+	}
+}
+
 void FleetStreet::arrive(int clientID)
 {
-	int randDecision = (std::rand() % 100) + 1;
-	if(randDecision < 50)
+	if(clientID % 2 == 0)
 		butFirstSirIThinkAShave(clientID);
 	else
-		butFirstSirIThinkAShave(clientID);
+		theWorstPiesInLondon(clientID);
 }
 
 void FleetStreet::createClients()
@@ -369,23 +442,28 @@ void FleetStreet::changeGUI()
 			else
 				printw("Lounge[%d]:\t\t\tClient[%d]", i - 1, barberShopStatus[i]);
 		}
-		move(18, 0);
+		for (int i = 0; i < bakeryStatus.size(); i++)
+		{
+			move(i+18, 0);
+			clrtoeol();
+			if(bakeryStatus[i] == -1)
+				printw("Bakery[%d]:\t\t\tempty", i);
+			else
+				printw("Bakery[%d]:\t\t\tClient[%d]", i, bakeryStatus[i]);
+		}
+		move(23, 0);
 		clrtoeol();
 		printw("Edible meat in the chute:\t%d\tdag", meat);
-		move(19, 0);
+		move(24, 0);
 		clrtoeol();
 		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
-		////////////////
-		for (int i = 0; i < priorityList.size(); i++)
-		{
-			move(i+21, 0);
-			clrtoeol();
-			printw("priorityList[%d]:\t\t\t%d", i, priorityList[i]);
-		}
-		////////////////
+		move(25, 0);
+		clrtoeol();
+		printw("Amount of money:\t\t%d\tpounds", money);
+		
 		refresh();
 		myMutex.unlock();
-		std::this_thread::sleep_for(std::chrono::milliseconds(100));
+		std::this_thread::sleep_for(std::chrono::milliseconds(150));
 	}
 }
 
@@ -404,6 +482,8 @@ void FleetStreet::startSimulation()
 
 	std::cin.get(); 	// pauses main thread here, other threads still going
 	stop = true;		// this breaks main loop
+	amIDead = true;
+	amIFull = true;
 
 	// joining threads
 	barber.join();

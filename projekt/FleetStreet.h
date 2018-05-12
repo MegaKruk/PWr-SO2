@@ -8,7 +8,7 @@
 #include <ncurses.h>
 #include <algorithm>
 
-constexpr int maxNoOfClients = 4;
+constexpr int maxNoOfClients = 7;
 constexpr int waitingRoomCapacity = 3;
 constexpr int bakeryCapacity = 4;
 
@@ -17,8 +17,8 @@ class FleetStreet
 private:
 
 public:
-    bool stop, amIDead;
-    int myName, myPos, meat, meatPies, uniqueID;
+    bool stop, amIDead, amIFull;
+    int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money;
 
     std::vector<int> clientsIDs;
 	std::vector<int> priorityList;
@@ -29,6 +29,7 @@ public:
     void barberFunction();
     void bakerFunction();
     void butFirstSirIThinkAShave(int);
+    void theWorstPiesInLondon(int);
     void arrive(int);
     void startSimulation();
     void createClients();
