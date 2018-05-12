@@ -26,7 +26,6 @@ public:
 	std::vector<int> bakeryStatus;				// 0 serving pies, 1-3 bakery queue
 
     FleetStreet();
-    void safePrint(std::string);
     void barberFunction();
     void bakerFunction();
     void butFirstSirIThinkAShave(int);
