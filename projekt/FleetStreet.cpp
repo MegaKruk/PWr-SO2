@@ -98,9 +98,14 @@ void FleetStreet::barberFunction()
 			//kill
 			myMutex.lock();
 			amIDead = true;
+			myMutex.unlock();
+			std::this_thread::sleep_for(std::chrono::milliseconds(150));
+			myMutex.lock();
 			clients[myPos].join();
 			clients.erase(clients.begin() + myPos);
 			clientsIDs.erase(clientsIDs.begin() + myPos);
+			myMutex.unlock();
+			myMutex.lock();
 			move(2, 0);
 			clrtoeol();
 			printw("Events: Sweeney Todd has killed Client[%d]", myName);
@@ -147,7 +152,9 @@ void FleetStreet::bakerFunction()
 				priorityList.push_back(tmp);
 				continue;
 			}
-			myMutex.unlock();
+			else
+				myMutex.unlock();
+
 			if (chute.try_lock())
 			{
 				int randWait5 = (std::rand() % 1) + 15;
@@ -179,7 +186,6 @@ void FleetStreet::bakerFunction()
 		}
 		else if(priorityList[0] == 1)
 		{
-			//std::this_thread::sleep_for(std::chrono::milliseconds(1500));
 			// clean razors
 
 			int tmp3 = priorityList[0];
@@ -216,21 +222,22 @@ void FleetStreet::bakerFunction()
 					// leave
 					myMutex.lock();
 					amIFull = true;
+					myMutex.unlock();
 					/*move(3, 0);
 					clrtoeol();
 					printw("Events: Client[%d]:\t%d", myName2, myPos2);
 					refresh();*/
-
-					/////////////////PROBLEM WITH JOINING/////////
-					//clients[myPos2].join();
-					//clients.erase(clients.begin() + myPos2);
-					//clientsIDs.erase(clientsIDs.begin() + myPos2);
+					std::this_thread::sleep_for(std::chrono::milliseconds(150));
+					myMutex.lock();
+					clients[myPos2].join();
+					clients.erase(clients.begin() + myPos2);
+					clientsIDs.erase(clientsIDs.begin() + myPos2);
+					myMutex.unlock();
+					myMutex.lock();
 					move(2, 0);
 					clrtoeol();
 					printw("Events: Client[%d] ate a pie, paid and is going home", myName2);
 					refresh();
-					myMutex.unlock();
-					myMutex.lock();
 					meatPies--;
 					money += 5;
 					myMutex.unlock();
@@ -293,16 +300,15 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 		{
 			if(barberChair.try_lock())
 			{
+				myName = clientID;
 				myMutex.lock();
 				barberShopStatus[1] = -1;
 				barberShopStatus[0] = clientID;
-				myName = clientID;
-				myPos = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
 				myMutex.unlock();
 				waitingRoom[0].unlock();
 				while(!amIDead)
 				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 				amIDead = false;
 				break;
@@ -323,6 +329,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 	}
+	myPos = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
 }
 
 void FleetStreet::theWorstPiesInLondon(int clientID)
@@ -353,16 +360,15 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 		{
 			if(bakery[0].try_lock())
 			{
+				myName2 = clientID;
 				myMutex.lock();
 				bakeryStatus[1] = -1;
 				bakeryStatus[0] = clientID;
-				myName2 = clientID;
-				myPos2 = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
 				myMutex.unlock();
 				bakery[1].unlock();
 				while(!amIFull)
 				{
-					std::this_thread::sleep_for(std::chrono::milliseconds(200));
+					std::this_thread::sleep_for(std::chrono::milliseconds(100));
 				}
 				amIFull = false;
 				bakery[0].unlock();
@@ -384,6 +390,7 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 	}
+	myPos2 = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
 }
 
 void FleetStreet::arrive(int clientID)
