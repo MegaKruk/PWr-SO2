@@ -20,10 +20,11 @@ FleetStreet::FleetStreet()
 	stop = false;
 	amIDead = false;
 	amIFull = false;
+	razorSignal = false;
 	uniqueID = 0;
 	meat = 0;
 	meatPies = 0;
-	money = 0;
+	money = 20;
 	bloodiedRazors = 0;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
 	for(int i = 0; i < barberShopStatus.size(); i++)
@@ -92,51 +93,6 @@ void FleetStreet::barberFunction()
 			barberChair.unlock();
 		else
 		{	
-			// check how many bloodied razors
-			myMutex.lock();
-			bloodiedRazors = 0;
-			for(int i = 0; i < razorsCapacity; i++)
-			{
-				if(razorsStatus[i] == -1)
-					bloodiedRazors++;
-			}
-			myMutex.unlock();
-
-			// if not enough clean razors, tell Mrs Lovett to change priorityList
-			if(bloodiedRazors > 1)
-			{
-				/*for(int i = 0; i < priorityList.size(); i++)
-				{
-					myMutex.lock();
-					if(priorityList[i] == 1)
-					{
-						int tmp6 = priorityList[0];
-						priorityList[0] = 1;
-						priorityList.erase(priorityList.begin() + i);
-						priorityList.push_back(tmp6);
-					}
-					myMutex.unlock();
-				}*/
-				myMutex.lock();
-				move(5, 0);
-				clrtoeol();
-				printw("Sweeney Todd is waiting for clean razors");
-				refresh();
-				myMutex.unlock();
-				for(int i = 0; i < razorsCapacity; i++)
-				{
-					myMutex.lock();
-					if(razorsStatus[i] == 1)
-					{
-						razors[i].unlock();
-						razorsStatus[i] = 0;
-					}
-					myMutex.unlock();
-				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
-				continue;
-			}
-
 			// pick up razors
 			int pickedRazors = 0;
 			for(int i = 0; i < razorsCapacity; i++)
@@ -181,7 +137,7 @@ void FleetStreet::barberFunction()
 				if(pickedRazors == 2)
 					break;
 			}
-
+			// if only picked up 1 razor, drop it
 			if(pickedRazors < 2)
 			{
 				for(int i = 0; i < razorsCapacity; i++)
@@ -194,12 +150,12 @@ void FleetStreet::barberFunction()
 					}
 					myMutex.unlock();
 				}
-				std::this_thread::sleep_for(std::chrono::milliseconds(100));
+				std::this_thread::sleep_for(std::chrono::milliseconds(30));
 				continue;
 			}
 
 			// shave a client
-			int randWait3 = (std::rand() % 10) + 25;
+			int randWait3 = (std::rand() % 10) + 40;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
 			{
@@ -263,19 +219,62 @@ void FleetStreet::barberFunction()
 			myMutex.unlock();
 			chute.unlock();
 			barberChair.unlock();
+
+			// check how many bloodied razors
+			myMutex.lock();
+			bloodiedRazors = 0;
+			for(int i = 0; i < razorsCapacity; i++)
+			{
+				if(razorsStatus[i] == -1)
+					bloodiedRazors++;
+				else if(razorsStatus[i] == 1)
+				{
+					razors[i].unlock();
+					razorsStatus[i] = 0;
+				}
+			}
+			myMutex.unlock();
+
+			// if not enough clean razors, tell Mrs Lovett to change priorityList
+			if(bloodiedRazors > 1)
+			{
+				myMutex.lock();
+				razorSignal = true;
+				move(5, 0);
+				clrtoeol();
+				printw("Sweeney Todd is waiting for clean razors");
+				refresh();
+				myMutex.unlock();
+				std::this_thread::sleep_for(std::chrono::milliseconds(30));
+				continue;
+			}
 		}
 	}
 }
-/////////// CHECK PRIORITY LIST
+
 void FleetStreet::bakerFunction()
 {
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	while(!stop)
 	{
 		myMutex.lock();
+		if(razorSignal == true)
+		{
+			priorityList[0] = 1;
+			priorityList[1] = 2;
+			priorityList[2] = 3;
+			priorityList[3] = 0;
+			razorSignal = false;
+		}
+		myMutex.unlock();
+
+		myMutex.lock();
 		if(priorityList[0] == 0)
 		{
+			myMutex.unlock();
 			// make meatPies
-			if(meat < 20)
+			myMutex.lock();
+			if(meat < 15)
 			{
 				int tmp = priorityList[0];
 				priorityList.erase(priorityList.begin());
@@ -286,9 +285,9 @@ void FleetStreet::bakerFunction()
 			else
 				myMutex.unlock();
 
-			if (chute.try_lock())
+			if(chute.try_lock())
 			{
-				int randWait5 = (std::rand() % 5) + 15;
+				int randWait5 = (std::rand() % 5) + 10;
 				float progressT5 = 0.0;
 				for (int i = 1; i <= randWait5; i++)
 				{
@@ -328,7 +327,7 @@ void FleetStreet::bakerFunction()
 					razors[i].lock();
 					razorsStatus[i] = -2;
 					myMutex.unlock();
-					int randWait8 = (std::rand() % 5) + 15;
+					int randWait8 = (std::rand() % 5) + 10;
 					float progressT8 = 0.0;
 					for (int j = 1; j <= randWait8; j++)
 					{
@@ -373,7 +372,7 @@ void FleetStreet::bakerFunction()
 			{
 				if(meatPies > 0)
 				{
-					int randWait7 = (std::rand() % 5) + 15;
+					int randWait7 = (std::rand() % 5) + 10;
 					float progressT7 = 0.0;
 					for (int i = 1; i <= randWait7; i++)
 					{
@@ -411,13 +410,13 @@ void FleetStreet::bakerFunction()
 				priorityList.erase(priorityList.begin());
 				priorityList.push_back(tmp5);
 				myMutex.unlock();
-			}		
+			}	
 		}
 		else
 		{
 			myMutex.unlock();
 			// take a break
-			int randWait6 = (std::rand() % 5) + 5;
+			int randWait6 = (std::rand() % 5) + 10;
 			float progressT6 = 0.0;
 			for (int i = 1; i <= randWait6; i++)
 			{
@@ -682,7 +681,14 @@ void FleetStreet::changeGUI()
 		move(27, 0);
 		clrtoeol();
 		printw("Amount of money:\t\t%d\tpounds", money);
-		
+		///////////
+		/*for (int i = 0; i < priorityList.size(); i++)
+		{
+			move(i+30, 0);
+			clrtoeol();
+			printw("priorityList[%d]:\t\t\t%d", i, priorityList[i]);
+		}*/
+		//////////
 		refresh();
 		myMutex.unlock();
 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
