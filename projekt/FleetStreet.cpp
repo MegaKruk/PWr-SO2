@@ -11,7 +11,7 @@ std::mutex bakery[bakeryCapacity];			// to bakery as mutexes, pies are served at
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
 // 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
-// 17 title, 18 meat in the chute, 19 meat pies, 20 money,  22-25 bakery, 27 RENT
+// 17 title, 18-21 bakery, 23 title, 24 meat, 25 pies, 26 money, 28 PAYDAY
 
 
 FleetStreet::FleetStreet()
@@ -490,13 +490,13 @@ void FleetStreet::changeGUI()
 			else
 				printw("Bakery[%d]:\t\t\tClient[%d]", i, bakeryStatus[i]);
 		}
-		move(23, 0);
-		clrtoeol();
-		printw("Edible meat in the chute:\t%d\tdag", meat);
 		move(24, 0);
 		clrtoeol();
-		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
+		printw("Edible meat in the chute:\t%d\tdag", meat);
 		move(25, 0);
+		clrtoeol();
+		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
+		move(26, 0);
 		clrtoeol();
 		printw("Amount of money:\t\t%d\tpounds", money);
 		
