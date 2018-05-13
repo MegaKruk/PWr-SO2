@@ -5,6 +5,7 @@ std::thread clientCreator;					// creates clients every interval
 std::thread barber;							// Sweeney Todd thread, gives clients a shave, kills them, adds meat, sleeps if waiting room is empty
 std::thread baker;							// Mrs Lovett thread, bakes and serves meat pies, cleans razors if there's a need for it, sometimes takes a break
 std::thread GUI;							// Thread to refresh barber and bakery status
+std::thread payday;							// thread that takes some money every interval, if money goes < 0 all threads end (business goes bankrupt)
 std::mutex bakery[bakeryCapacity];			// bakery queue as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
 std::mutex razors[razorsCapacity];			// razors as mutexes. Need 2 to perform a shave. After using become bloodied and need to be cleaned before next use
@@ -17,6 +18,7 @@ std::mutex myMutex; 						// mutex for keeping cout and some other operations sa
 
 FleetStreet::FleetStreet()
 {
+	// just initialize everything with starting values
 	stop = false;
 	amIDead = false;
 	amIFull = false;
@@ -155,7 +157,7 @@ void FleetStreet::barberFunction()
 			}
 
 			// shave a client
-			int randWait3 = (std::rand() % 10) + 40;
+			int randWait3 = (std::rand() % 15) + 40;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
 			{
@@ -254,9 +256,9 @@ void FleetStreet::barberFunction()
 
 void FleetStreet::bakerFunction()
 {
-	std::this_thread::sleep_for(std::chrono::milliseconds(100));
 	while(!stop)
 	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(100));	// wait a little bit to see if "I need razors" signal comes
 		myMutex.lock();
 		if(razorSignal == true)
 		{
@@ -268,13 +270,15 @@ void FleetStreet::bakerFunction()
 		}
 		myMutex.unlock();
 
+		// choose activity
 		myMutex.lock();
 		if(priorityList[0] == 0)
 		{
 			myMutex.unlock();
-			// make meatPies
+
+			// make meat pies
 			myMutex.lock();
-			if(meat < 15)
+			if(meat < 25)
 			{
 				int tmp = priorityList[0];
 				priorityList.erase(priorityList.begin());
@@ -287,7 +291,7 @@ void FleetStreet::bakerFunction()
 
 			if(chute.try_lock())
 			{
-				int randWait5 = (std::rand() % 5) + 10;
+				int randWait5 = (std::rand() % 5) + 20;
 				float progressT5 = 0.0;
 				for (int i = 1; i <= randWait5; i++)
 				{
@@ -318,6 +322,7 @@ void FleetStreet::bakerFunction()
 		else if(priorityList[0] == 1)
 		{
 			myMutex.unlock();
+
 			// clean razors
 			for(int i = 0; i < razorsCapacity; i++)
 			{
@@ -327,7 +332,7 @@ void FleetStreet::bakerFunction()
 					razors[i].lock();
 					razorsStatus[i] = -2;
 					myMutex.unlock();
-					int randWait8 = (std::rand() % 5) + 10;
+					int randWait8 = (std::rand() % 5) + 15;
 					float progressT8 = 0.0;
 					for (int j = 1; j <= randWait8; j++)
 					{
@@ -358,7 +363,8 @@ void FleetStreet::bakerFunction()
 		else if(priorityList[0] == 2)
 		{
 			myMutex.unlock();
-			// serve meatPies, get money
+
+			// serve meat pies, get money
 			if(bakery[0].try_lock()) 
 			{
 				bakery[0].unlock();
@@ -372,7 +378,7 @@ void FleetStreet::bakerFunction()
 			{
 				if(meatPies > 0)
 				{
-					int randWait7 = (std::rand() % 5) + 10;
+					int randWait7 = (std::rand() % 5) + 20;
 					float progressT7 = 0.0;
 					for (int i = 1; i <= randWait7; i++)
 					{
@@ -415,8 +421,9 @@ void FleetStreet::bakerFunction()
 		else
 		{
 			myMutex.unlock();
+
 			// take a break
-			int randWait6 = (std::rand() % 5) + 10;
+			int randWait6 = (std::rand() % 5) + 15;
 			float progressT6 = 0.0;
 			for (int i = 1; i <= randWait6; i++)
 			{
@@ -598,7 +605,7 @@ void FleetStreet::createClients()
 	{
 		if(clients.size() < maxNoOfClients)
 		{
-			int randWait0 = (std::rand() % 5) + 20;
+			int randWait0 = (std::rand() % 10) + 25;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
 			{
@@ -681,31 +688,99 @@ void FleetStreet::changeGUI()
 		move(27, 0);
 		clrtoeol();
 		printw("Amount of money:\t\t%d\tpounds", money);
-		///////////
-		/*for (int i = 0; i < priorityList.size(); i++)
-		{
-			move(i+30, 0);
-			clrtoeol();
-			printw("priorityList[%d]:\t\t\t%d", i, priorityList[i]);
-		}*/
-		//////////
 		refresh();
 		myMutex.unlock();
 		std::this_thread::sleep_for(std::chrono::milliseconds(150));
 	}
 }
 
+void FleetStreet::timeToPay()
+{
+	// our characters need to pay up every interval to stay alive
+	int tax = 6;
+	while(!stop)
+	{
+		for (int timeLeft = 30; timeLeft >= 0; timeLeft--)
+		{
+			if(stop)
+				break;
+			myMutex.lock();
+			move(29, 0);
+			clrtoeol();
+			printw("Payday coming in:\t\t%d\tseconds", timeLeft);
+			move(30, 0);
+			clrtoeol();
+			printw("Tax is equal to:\t\t%d\tpounds", tax);
+			refresh();
+			myMutex.unlock();
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		}
+		myMutex.lock();
+		money -= tax;
+		if(money < 0)
+		{
+			move(27, 0);
+			clrtoeol();
+			printw("Amount of money:\t\t%d\tpounds", money);
+			move(32, 0);
+			clrtoeol();
+			printw("Simulation is over. You went bankrupt!");
+			refresh();
+			stop = true;		// this breaks all thread loops
+			amIDead = true;
+			amIFull = true;
+		}
+		myMutex.unlock();
+	}
+}
+
+void FleetStreet::menuInit()
+{
+	// just initialize menu
+	myMutex.lock();
+	move(0, 0);
+	clrtoeol();
+	printw("<==================== Fleet Street Simulation ====================>");
+	move(1, 0);
+	clrtoeol();
+	printw("Next Client is coming to Fleet Street\t\t\t%.0f\t%%", 0);
+	move(2, 0);
+	clrtoeol();
+	printw("Events: ");
+	move(4, 0);
+	clrtoeol();
+	printw("<==================== Movie characters ===========================>");
+	move(5, 0);
+	clrtoeol();
+	printw("Sweeney Todd is");
+	move(6, 0);
+	clrtoeol();
+	printw("Mrs Lovett is");
+	move(8, 0);
+	clrtoeol();
+	printw("<==================== Barbers' ===================================>");
+	move(18, 0);
+	clrtoeol();
+	printw("<==================== Bakers' ====================================>");
+	move(24, 0);
+	clrtoeol();
+	printw("<==================== Resources ==================================>");
+	refresh();
+	myMutex.unlock();
+}
+
 void FleetStreet::startSimulation()
 {
 	initscr();
-	cbreak();
-	//raw();
-	//menuinit();
+	raw();
+	curs_set(0);
+	menuInit();
 
 	// creating threads
 	barber = std::thread(&FleetStreet::barberFunction, this);
 	baker = std::thread(&FleetStreet::bakerFunction, this);
 	clientCreator = std::thread(&FleetStreet::createClients, this);
+	payday = std::thread(&FleetStreet::timeToPay, this);
 	GUI = std::thread(&FleetStreet::changeGUI, this);
 
 	std::cin.get(); 	// pauses main thread here, other threads still going
@@ -717,6 +792,7 @@ void FleetStreet::startSimulation()
 	barber.join();
 	baker.join();
 	clientCreator.join();
+	payday.join();
 	GUI.join();
 	for (int i = 0; i < clients.size(); ++i)
 	{

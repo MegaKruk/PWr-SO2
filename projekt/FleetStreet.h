@@ -28,6 +28,7 @@ public:
 	std::vector<int> razorsStatus;				// razor status: 0 clean free, 1 clean taken, -1 bloodied free, -2 being cleaned
 
     FleetStreet();
+    void menuInit();
     void barberFunction();
     void bakerFunction();
     void butFirstSirIThinkAShave(int);
@@ -35,6 +36,7 @@ public:
     void arrive(int);
     void startSimulation();
     void createClients();
+    void timeToPay();
     void changeGUI();
     ~FleetStreet();
 };
