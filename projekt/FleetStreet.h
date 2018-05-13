@@ -11,6 +11,7 @@
 constexpr int maxNoOfClients = 8;
 constexpr int waitingRoomCapacity = 3;
 constexpr int bakeryCapacity = 4;
+constexpr int razorsCapacity = 3;
 
 class FleetStreet
 {
@@ -20,10 +21,11 @@ public:
     bool stop, amIDead, amIFull;
     int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money;
 
-    std::vector<int> clientsIDs;
-	std::vector<int> priorityList;
+    std::vector<int> clientsIDs;				// active clients ID's with index corresponding to index in thread vector
+	std::vector<int> priorityList;				// list of priorities to decide what Mrs Lovett has to do next
 	std::vector<int> barberShopStatus;			// 0-barber's chair, 1-3 lounge
 	std::vector<int> bakeryStatus;				// 0 serving pies, 1-3 bakery queue
+	std::vector<int> razorsStatus;				// razor status: 0 clean free, 1 clean taken, -1 bloodied free, -2 being cleaned
 
     FleetStreet();
     void barberFunction();

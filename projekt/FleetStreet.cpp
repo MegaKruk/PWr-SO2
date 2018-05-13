@@ -5,13 +5,14 @@ std::thread clientCreator;
 std::thread barber;							// Sweeney Todd thread
 std::thread baker;							// Mrs Lovett thread
 std::thread GUI;							// Thread to refresh barber and bakery status
+std::mutex bakery[bakeryCapacity];			// bakery queue as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
+std::mutex razors[razorsCapacity];			// razors as mutexes. Need 2 to perform a shave. After using become bloodied and need to be cleaned before next use
 std::mutex barberChair;		 				// barber's chair as mutex
-std::mutex bakery[bakeryCapacity];			// to bakery as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex chute;							// chute as mutex
 std::mutex myMutex; 						// mutex for keeping cout and some other operations safe
-// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 12 chair, 13-15 lounge, 
-// 17 title, 18-21 bakery, 23 title, 24 meat, 25 pies, 26 money, 28 PAYDAY
+// 0 title, 1 client creator, 2 events, 4 title, 5 Sweeney, 6 Lovett, 8 title, 9-11 razors, 13 chair, 14-16 lounge, 
+// 18 title, 19-22 bakery, 24 title, 25 meat, 26 pies, 27 money, 29 PAYDAY
 
 
 FleetStreet::FleetStreet()
@@ -37,6 +38,11 @@ FleetStreet::FleetStreet()
 	for(int i = 0; i < priorityList.size(); i++)
 	{
 		priorityList[i] = i;
+	}
+	razorsStatus.resize(razorsCapacity);
+	for(int i = 0; i < razorsStatus.size(); i++)
+	{
+		razorsStatus[i] = 0;
 	}
 }
 
@@ -81,9 +87,56 @@ void FleetStreet::barberFunction()
 			else 
 				isEmpty = false;
 		}
-		if(barberChair.try_lock()) { barberChair.unlock(); }
+		if(barberChair.try_lock())
+			barberChair.unlock();
 		else
-		{
+		{	
+			// pick up razors
+			int pickedRazors = 0;
+			for(int i = 0; i < razorsCapacity; i++)
+			{
+				if(razors[i].try_lock())
+				{
+					myMutex.lock();
+					if(razorsStatus[i] == 0)
+					{
+						pickedRazors++;
+						razorsStatus[i] = 1;	// this razor is now taken by barber
+						myMutex.unlock();
+						for(int j = 0; j < razorsCapacity; j++)
+						{
+							if(i == j)
+								continue;
+							if(razors[j].try_lock())
+							{
+								myMutex.lock();
+								if(razorsStatus[j] == 0)
+								{
+									pickedRazors++;
+									razorsStatus[j] = 1;	// this razor is now taken by barber
+									myMutex.unlock();
+								}
+								else
+								{
+									razors[j].unlock();
+									myMutex.unlock();
+								}
+							}
+							if(pickedRazors == 2)
+								break;
+						}
+					}
+					else
+					{
+						razors[i].unlock();
+						myMutex.unlock();
+					}
+				}
+				if(pickedRazors == 2)
+					break;
+			}
+			if(pickedRazors != 2)
+				continue;
 			int randWait3 = (std::rand() % 1) + 25;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
@@ -113,6 +166,18 @@ void FleetStreet::barberFunction()
 			printw("Events: Sweeney Todd has killed Client[%d]", myName);
 			refresh();
 			myMutex.unlock();
+
+			// unlock razors
+			for(int i = 0; i < razorsCapacity; i++)
+			{
+				myMutex.lock();
+				if(razorsStatus[i] == 1)
+				{
+					razors[i].unlock();
+					razorsStatus[i] = 0;
+				}
+				myMutex.unlock();
+			}
 
 			int randWait4 = (std::rand() % 1) + 15;
 			float progressT4 = 0.0;
@@ -463,7 +528,20 @@ void FleetStreet::changeGUI()
 	while(!stop)
 	{
 		myMutex.lock();
-		move(12, 0);
+		for (int i = 0; i < razorsStatus.size(); i++)
+		{
+			move(i+9, 0);
+			clrtoeol();
+			if(razorsStatus[i] == -1)
+				printw("Razor[%d]:\t\t\tbloodied", i);
+			else if(razorsStatus[i] == -2)
+				printw("Razor[%d]:\t\t\tis being cleaned by Mrs Lovett", i);
+			else if(razorsStatus[i] == 1)
+				printw("Razor[%d]:\t\t\tis being used by Sweeney Todd", i);
+			else
+				printw("Razor[%d]:\t\t\tclean", i);
+		}
+		move(13, 0);
 		clrtoeol();
 		if(barberShopStatus[0] == -1)
 			printw("Barber's chair:\t\t\tempty");
@@ -474,7 +552,7 @@ void FleetStreet::changeGUI()
 
 		for (int i = 1; i < barberShopStatus.size(); i++)
 		{
-			move(i+12, 0);
+			move(i+13, 0);
 			clrtoeol();
 			if(barberShopStatus[i] == -1)
 				printw("Lounge[%d]:\t\t\tempty", i - 1);
@@ -483,20 +561,20 @@ void FleetStreet::changeGUI()
 		}
 		for (int i = 0; i < bakeryStatus.size(); i++)
 		{
-			move(i+18, 0);
+			move(i+19, 0);
 			clrtoeol();
 			if(bakeryStatus[i] == -1)
 				printw("Bakery[%d]:\t\t\tempty", i);
 			else
 				printw("Bakery[%d]:\t\t\tClient[%d]", i, bakeryStatus[i]);
 		}
-		move(24, 0);
-		clrtoeol();
-		printw("Edible meat in the chute:\t%d\tdag", meat);
 		move(25, 0);
 		clrtoeol();
-		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
+		printw("Edible meat in the chute:\t%d\tdag", meat);
 		move(26, 0);
+		clrtoeol();
+		printw("Meat pies ready for sale:\t%d\tportions", meatPies);
+		move(27, 0);
 		clrtoeol();
 		printw("Amount of money:\t\t%d\tpounds", money);
 		
