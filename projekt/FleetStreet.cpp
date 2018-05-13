@@ -401,8 +401,8 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 
 void FleetStreet::arrive(int clientID)
 {
-	int randDecision = (std::rand() % 100) + 0;
-	if(randDecision < 50)
+	int randDecision = (std::rand() % 99) + 1;
+	if(randDecision > 50)
 	{
 		if(waitingRoom[waitingRoomCapacity - 1].try_lock())
 		{
