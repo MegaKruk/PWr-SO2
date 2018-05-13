@@ -19,7 +19,7 @@ private:
 
 public:
     bool stop, amIDead, amIFull;
-    int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money;
+    int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money, bloodiedRazors;
 
     std::vector<int> clientsIDs;				// active clients ID's with index corresponding to index in thread vector
 	std::vector<int> priorityList;				// list of priorities to decide what Mrs Lovett has to do next

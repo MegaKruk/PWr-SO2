@@ -24,6 +24,7 @@ FleetStreet::FleetStreet()
 	meat = 0;
 	meatPies = 0;
 	money = 0;
+	bloodiedRazors = 0;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
 	for(int i = 0; i < barberShopStatus.size(); i++)
 	{
@@ -135,8 +136,29 @@ void FleetStreet::barberFunction()
 				if(pickedRazors == 2)
 					break;
 			}
+
+			// if picked up only 1 clean razor, free it and try again later
 			if(pickedRazors != 2)
+			{
+				myMutex.lock();
+				move(5, 0);
+				clrtoeol();
+				printw("Sweeney Todd is waiting for clean razors");
+				refresh();
+				myMutex.unlock();
+				for(int i = 0; i < razorsCapacity; i++)
+				{
+					myMutex.lock();
+					if(razorsStatus[i] == 1)
+					{
+						razors[i].unlock();
+						razorsStatus[i] = 0;
+					}
+					myMutex.unlock();
+				}
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				continue;
+			}
 			int randWait3 = (std::rand() % 1) + 25;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
@@ -167,14 +189,14 @@ void FleetStreet::barberFunction()
 			refresh();
 			myMutex.unlock();
 
-			// unlock razors
+			// unlock now bloodied razors
 			for(int i = 0; i < razorsCapacity; i++)
 			{
 				myMutex.lock();
 				if(razorsStatus[i] == 1)
 				{
 					razors[i].unlock();
-					razorsStatus[i] = 0;
+					razorsStatus[i] = -1;
 				}
 				myMutex.unlock();
 			}
@@ -535,9 +557,9 @@ void FleetStreet::changeGUI()
 			if(razorsStatus[i] == -1)
 				printw("Razor[%d]:\t\t\tbloodied", i);
 			else if(razorsStatus[i] == -2)
-				printw("Razor[%d]:\t\t\tis being cleaned by Mrs Lovett", i);
+				printw("Razor[%d]:\t\t\tcleaned by Mrs Lovett", i);
 			else if(razorsStatus[i] == 1)
-				printw("Razor[%d]:\t\t\tis being used by Sweeney Todd", i);
+				printw("Razor[%d]:\t\t\tused by Sweeney Todd", i);
 			else
 				printw("Razor[%d]:\t\t\tclean", i);
 		}
