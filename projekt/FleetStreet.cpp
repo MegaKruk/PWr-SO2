@@ -52,7 +52,8 @@ void FleetStreet::barberFunction()
 			{
 				waitingRoom[i].unlock();
 			}
-			else isEmpty = false;
+			else 
+				isEmpty = false;
 		}
 		if(isEmpty)
 		{
@@ -77,7 +78,8 @@ void FleetStreet::barberFunction()
 				}
 				barberChair.unlock();
 			}
-			else isEmpty = false;
+			else 
+				isEmpty = false;
 		}
 		if(barberChair.try_lock()) { barberChair.unlock(); }
 		else
@@ -313,7 +315,8 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 				amIDead = false;
 				break;
 			}
-			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			else 
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 		else 
 		{
@@ -326,7 +329,8 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 				waitingRoom[wrPointer].unlock();
 				wrPointer--;
 			}
-			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			else 
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 	}
 	myPos = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
@@ -374,7 +378,8 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 				bakery[0].unlock();
 				break;
 			}
-			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			else 
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 		else 
 		{
@@ -387,7 +392,8 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 				bakery[bkrPointer].unlock();
 				bkrPointer--;
 			}
-			else std::this_thread::sleep_for(std::chrono::milliseconds(200));
+			else 
+				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 		}
 	}
 	myPos2 = std::find(clientsIDs.begin(), clientsIDs.end(), clientID) - clientsIDs.begin();
@@ -395,18 +401,35 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 
 void FleetStreet::arrive(int clientID)
 {
-	if(clientID % 2 == 0)
-		butFirstSirIThinkAShave(clientID);
+	int randDecision = (std::rand() % 100) + 0;
+	if(randDecision < 50)
+	{
+		if(waitingRoom[waitingRoomCapacity - 1].try_lock())
+		{
+			waitingRoom[waitingRoomCapacity - 1].unlock();
+			butFirstSirIThinkAShave(clientID);
+		}
+		else
+			theWorstPiesInLondon(clientID);
+	}
 	else
-		theWorstPiesInLondon(clientID);
+	{
+		if(bakery[bakeryCapacity - 1].try_lock())
+		{
+			bakery[bakeryCapacity - 1].unlock();
+			theWorstPiesInLondon(clientID);
+		}
+		else
+			butFirstSirIThinkAShave(clientID);
+	}
 }
 
 void FleetStreet::createClients()
 {
 	while(!stop)
 	{
-		//if(clients.size() < maxNoOfClients)
-		//{
+		if(clients.size() < maxNoOfClients)
+		{
 			int randWait0 = (std::rand() % 1) + 15;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
@@ -429,9 +452,9 @@ void FleetStreet::createClients()
 			refresh();
 			myMutex.unlock();
 			uniqueID++;
-		//}
-		//else
-		//	std::this_thread::sleep_for(std::chrono::milliseconds(500));
+		}
+		else
+			std::this_thread::sleep_for(std::chrono::milliseconds(300));
 	}
 }
 
