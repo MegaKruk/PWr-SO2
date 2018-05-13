@@ -1,9 +1,9 @@
 #include "FleetStreet.h"
 
-std::vector<std::thread> clients;
-std::thread clientCreator;
-std::thread barber;							// Sweeney Todd thread
-std::thread baker;							// Mrs Lovett thread
+std::vector<std::thread> clients;			// can either have a shave or have a pie. After a shave they get killed they join and turn to meat. After eating a pie they leave money and join
+std::thread clientCreator;					// creates clients every interval
+std::thread barber;							// Sweeney Todd thread, gives clients a shave, kills them, adds meat, sleeps if waiting room is empty
+std::thread baker;							// Mrs Lovett thread, bakes and serves meat pies, cleans razors if there's a need for it, sometimes takes a break
 std::thread GUI;							// Thread to refresh barber and bakery status
 std::mutex bakery[bakeryCapacity];			// bakery queue as mutexes, pies are served at bakery[0], 1-3 is a queue
 std::mutex waitingRoom[waitingRoomCapacity];// chairs in waiting room as mutexes
@@ -159,6 +159,8 @@ void FleetStreet::barberFunction()
 				std::this_thread::sleep_for(std::chrono::milliseconds(200));
 				continue;
 			}
+
+			// shave a client
 			int randWait3 = (std::rand() % 1) + 25;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
@@ -172,7 +174,8 @@ void FleetStreet::barberFunction()
 				refresh();
 				myMutex.unlock();
 			}
-			//kill
+
+			//kill a client
 			myMutex.lock();
 			amIDead = true;
 			myMutex.unlock();
@@ -201,6 +204,7 @@ void FleetStreet::barberFunction()
 				myMutex.unlock();
 			}
 
+			// send body down the chute where it becomes meat
 			int randWait4 = (std::rand() % 1) + 15;
 			float progressT4 = 0.0;
 			chute.lock();
@@ -283,7 +287,7 @@ void FleetStreet::bakerFunction()
 		}
 		else if(priorityList[0] == 2)
 		{
-			// serve meatPies
+			// serve meatPies, get money
 			if(bakery[0].try_lock()) 
 			{
 				bakery[0].unlock();
@@ -308,14 +312,11 @@ void FleetStreet::bakerFunction()
 						refresh();
 						myMutex.unlock();
 					}
-					// leave
+
+					// client leaves after eating
 					myMutex.lock();
 					amIFull = true;
 					myMutex.unlock();
-					/*move(3, 0);
-					clrtoeol();
-					printw("Events: Client[%d]:\t%d", myName2, myPos2);
-					refresh();*/
 					std::this_thread::sleep_for(std::chrono::milliseconds(150));
 					myMutex.lock();
 					clients[myPos2].join();
@@ -338,7 +339,7 @@ void FleetStreet::bakerFunction()
 		}
 		else
 		{
-			// sleep
+			// take a break
 			myMutex.lock();
 			myMutex.unlock();
 			int randWait6 = (std::rand() % 1) + 15;
@@ -363,6 +364,7 @@ void FleetStreet::bakerFunction()
 
 void FleetStreet::butFirstSirIThinkAShave(int clientID)
 {
+	// move up the queue at barbers'. After reaching chair wait until death
 	int wrPointer = waitingRoomCapacity - 1;
 	while(!stop)
 	{
@@ -425,6 +427,7 @@ void FleetStreet::butFirstSirIThinkAShave(int clientID)
 
 void FleetStreet::theWorstPiesInLondon(int clientID)
 {
+	// move up the queue at bakers'. After reaching chair wait until served a meat pie
 	int bkrPointer = bakeryCapacity - 1;
 	while(!stop)
 	{
@@ -488,6 +491,7 @@ void FleetStreet::theWorstPiesInLondon(int clientID)
 
 void FleetStreet::arrive(int clientID)
 {
+	// decide whether to go to bakers' or barbers'. If there's no place in one place go to another
 	int randDecision = (std::rand() % 99) + 1;
 	if(randDecision > 50)
 	{
@@ -513,6 +517,7 @@ void FleetStreet::arrive(int clientID)
 
 void FleetStreet::createClients()
 {
+	// create clients every interval until there is not enough place for next
 	while(!stop)
 	{
 		if(clients.size() < maxNoOfClients)
@@ -547,6 +552,7 @@ void FleetStreet::createClients()
 
 void FleetStreet::changeGUI()
 {
+	// refreshes everchanging UI elements
 	while(!stop)
 	{
 		myMutex.lock();
@@ -608,7 +614,7 @@ void FleetStreet::changeGUI()
 
 void FleetStreet::startSimulation()
 {
-	initscr();	// try putting in constructor
+	initscr();
 	cbreak();
 	//raw();
 	//menuinit();
@@ -620,7 +626,7 @@ void FleetStreet::startSimulation()
 	GUI = std::thread(&FleetStreet::changeGUI, this);
 
 	std::cin.get(); 	// pauses main thread here, other threads still going
-	stop = true;		// this breaks main loop
+	stop = true;		// this breaks all thread loops
 	amIDead = true;
 	amIFull = true;
 
@@ -633,7 +639,7 @@ void FleetStreet::startSimulation()
 	{
 		clients[i].join();
 	}
-	endwin();	// try putting in destructor
+	endwin();
 }
 
 FleetStreet::~FleetStreet() {  }
