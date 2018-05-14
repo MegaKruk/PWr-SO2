@@ -157,7 +157,7 @@ void FleetStreet::barberFunction()
 			}
 
 			// shave a client
-			int randWait3 = (std::rand() % 15) + 40;
+			int randWait3 = (std::rand() % 20) + 35;
 			float progressT3 = 0.0;
 			for (int j = 1; j <= randWait3; j++)
 			{
@@ -201,7 +201,7 @@ void FleetStreet::barberFunction()
 			}
 
 			// send body down the chute where it becomes meat
-			int randWait4 = (std::rand() % 5) + 15;
+			int randWait4 = (std::rand() % 5) + 20;
 			float progressT4 = 0.0;
 			chute.lock();
 			for (int j = 1; j <= randWait4; j++)
@@ -248,7 +248,6 @@ void FleetStreet::barberFunction()
 				refresh();
 				myMutex.unlock();
 				std::this_thread::sleep_for(std::chrono::milliseconds(30));
-				continue;
 			}
 		}
 	}
@@ -378,7 +377,7 @@ void FleetStreet::bakerFunction()
 			{
 				if(meatPies > 0)
 				{
-					int randWait7 = (std::rand() % 5) + 20;
+					int randWait7 = (std::rand() % 5) + 15;
 					float progressT7 = 0.0;
 					for (int i = 1; i <= randWait7; i++)
 					{
@@ -605,7 +604,7 @@ void FleetStreet::createClients()
 	{
 		if(clients.size() < maxNoOfClients)
 		{
-			int randWait0 = (std::rand() % 10) + 25;
+			int randWait0 = (std::rand() % 20) + 25;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
 			{
