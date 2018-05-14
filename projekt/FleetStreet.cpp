@@ -722,7 +722,7 @@ void FleetStreet::timeToPay()
 			move(27, 0);
 			clrtoeol();
 			printw("Amount of money:\t\t%d\tpounds", money);
-			move(32, 0);
+			move(29, 0);
 			clrtoeol();
 			printw("Simulation is over. You went bankrupt!");
 			refresh();
@@ -737,44 +737,59 @@ void FleetStreet::timeToPay()
 void FleetStreet::menuInit()
 {
 	// just initialize menu
-	myMutex.lock();
 	move(0, 0);
 	clrtoeol();
-	printw("<==================== Fleet Street Simulation ====================>");
+	attron(COLOR_PAIR(2));
+	printw("<==================== Fleet Street Simulation ===================>");
+	attroff(COLOR_PAIR(2));
 	move(1, 0);
 	clrtoeol();
+	attron(COLOR_PAIR(1));
 	printw("Next Client is coming to Fleet Street\t\t\t%.0f\t%%", 0);
 	move(2, 0);
 	clrtoeol();
 	printw("Events: ");
+	attroff(COLOR_PAIR(1));
 	move(4, 0);
 	clrtoeol();
-	printw("<==================== Movie characters ===========================>");
+	attron(COLOR_PAIR(2));
+	printw("<==================== Movie characters ==========================>");
+	attroff(COLOR_PAIR(2));
 	move(5, 0);
 	clrtoeol();
+	attron(COLOR_PAIR(1));
 	printw("Sweeney Todd is");
 	move(6, 0);
 	clrtoeol();
 	printw("Mrs Lovett is");
+	attroff(COLOR_PAIR(1));
 	move(8, 0);
 	clrtoeol();
-	printw("<==================== Barbers' ===================================>");
+	attron(COLOR_PAIR(2));
+	printw("<==================== Barbers' ==================================>");
 	move(18, 0);
 	clrtoeol();
-	printw("<==================== Bakers' ====================================>");
+	printw("<==================== Bakers' ===================================>");
 	move(24, 0);
 	clrtoeol();
-	printw("<==================== Resources ==================================>");
+	printw("<==================== Resources =================================>");
+	attroff(COLOR_PAIR(2));
 	refresh();
-	myMutex.unlock();
 }
 
 void FleetStreet::startSimulation()
 {
 	initscr();
 	raw();
+	start_color();
+	init_color(COLOR_WHITE, 550, 750, 550);
+	init_color(COLOR_BLACK, 100, 100, 100);
+	init_color(COLOR_GREEN, 90, 444, 90);
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
+	init_pair(2, COLOR_BLACK, COLOR_WHITE);
 	curs_set(0);
 	menuInit();
+	attron(COLOR_PAIR(1));
 
 	// creating threads
 	barber = std::thread(&FleetStreet::barberFunction, this);
@@ -798,6 +813,7 @@ void FleetStreet::startSimulation()
 	{
 		clients[i].join();
 	}
+	attroff(COLOR_PAIR(1));
 	endwin();
 }
 
