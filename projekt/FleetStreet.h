@@ -8,15 +8,10 @@
 #include <ncurses.h>
 #include <algorithm>
 
-constexpr int maxNoOfClients = 8;
-constexpr int waitingRoomCapacity = 3;
-constexpr int bakeryCapacity = 4;
-constexpr int razorsCapacity = 3;
-
 class FleetStreet
 {
 private:
-	int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money, bloodiedRazors;
+	int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money, bloodiedRazors, maxNoOfClients;
 	bool stop, amIDead, amIFull, razorSignal;
 
     std::vector<int> clientsIDs;				// active clients ID's with index corresponding to index in thread vector

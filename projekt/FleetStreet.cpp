@@ -1,5 +1,9 @@
 #include "FleetStreet.h"
 
+constexpr int waitingRoomCapacity = 3;
+constexpr int bakeryCapacity = 4;
+constexpr int razorsCapacity = 3;
+
 std::vector<std::thread> clients;			// can either have a shave or have a pie. After a shave they get killed they join and turn to meat. After eating a pie they leave money and join
 std::thread clientCreator;					// creates clients every interval
 std::thread barber;							// Sweeney Todd thread, gives clients a shave, kills them, adds meat, sleeps if waiting room is empty
@@ -28,6 +32,7 @@ FleetStreet::FleetStreet()
 	meatPies = 0;
 	money = 20;
 	bloodiedRazors = 0;
+	maxNoOfClients = 8;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
 	for(int i = 0; i < barberShopStatus.size(); i++)
 	{
@@ -604,7 +609,7 @@ void FleetStreet::createClients()
 	{
 		if(clients.size() < maxNoOfClients)
 		{
-			int randWait0 = (std::rand() % 20) + 25;
+			int randWait0 = (std::rand() % 25) + 25;
 			float progressT0 = 0.0;
 			for (int i = 1; i <= randWait0; i++)
 			{
