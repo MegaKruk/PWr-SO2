@@ -11,7 +11,7 @@
 class FleetStreet
 {
 private:
-	int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money, bloodiedRazors, maxNoOfClients;
+	int myName, myName2, myPos, myPos2, meat, meatPies, uniqueID, money, bloodiedRazors, maxNoOfClients, tax;
 	bool stop, amIDead, amIFull, razorSignal;
 
     std::vector<int> clientsIDs;				// active clients ID's with index corresponding to index in thread vector

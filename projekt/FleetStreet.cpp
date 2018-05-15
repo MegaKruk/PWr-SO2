@@ -31,6 +31,7 @@ FleetStreet::FleetStreet()
 	meat = 0;
 	meatPies = 0;
 	money = 20;
+	tax = 6;
 	bloodiedRazors = 0;
 	maxNoOfClients = 8;
 	barberShopStatus.resize(waitingRoomCapacity + 1);
@@ -701,7 +702,6 @@ void FleetStreet::changeGUI()
 void FleetStreet::timeToPay()
 {
 	// our characters need to pay up every interval to stay alive
-	int tax = 6;
 	while(!stop)
 	{
 		for (int timeLeft = 30; timeLeft >= 0; timeLeft--)
